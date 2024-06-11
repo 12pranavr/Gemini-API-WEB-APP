@@ -7,14 +7,14 @@ let promptInput = document.querySelector('input[name="prompt"]');
 let output = document.querySelector('.output');
 
 function speakText(text) {
+  console.log("speak")
   if (window.speechSynthesis) {
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance();
 
     utterance.text = text;
-    utterance.lang = "en-IN"; // Change language as needed
-    utterance.voice = window.speechSynthesis.getVoices().filter(voice => voice.name.includes('female'))[0];
-    utterance.pitch = 1.2;
+    utterance.lang = "en-US"; // Change language as needed
+    // utterance.pitch = 1.2;
     synth.speak(utterance);
   } else {
     alert("Your browser doesn't support Speech Synthesis.");
@@ -35,7 +35,7 @@ form.onsubmit = async (ev) => {
     ];
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.0-pro",
+      model: "gemini-1.5-pro",
       safetySettings: [
         {
           category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -48,6 +48,7 @@ form.onsubmit = async (ev) => {
     let md = new MarkdownIt();
     for await (let response of result.stream) {
       buffer.push(response.text());
+      console.log("generated")
       speakText(response.text());
       output.innerHTML = md.render(buffer.join(''));
     }

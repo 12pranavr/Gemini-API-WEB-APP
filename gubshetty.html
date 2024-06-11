@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    h1 {
+      text-align: center;
+      color: white;
+      font-family: Impact;
+      letter-spacing: 1px;
+    }
+
+    body {
+      background-color: black;
+      color: white;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: rgb(34, 31, 31);
+      color: white;
+      padding: 10px;
+      margin: 10px;
+      font-weight: 600;
+      font-size: 20px;
+    }
+    .but-cont{
+      height: 80vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    button{
+      background-color: rgb(34, 31, 31);
+      color: white;
+      border: none;
+      padding: 10px;
+      font-size: 20px;
+      font-weight: 600;
+      margin: 10px;
+      border-radius: 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>GUBSHETTY</h1>
+  <div class="container">
+    <div id="output">Click "Start Listening" to begin...</div>
+  </div>
+  <div class="but-cont">
+    <button id="startButton">Start Listening</button>
+    <button id="stopButton" disabled>Stop Listening</button>
+  </div>
+  <script>
+    
+    const outputDiv = document.getElementById('output');
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    let isListening = false;
+    let listeningTimeout;
+
+    recognition.continuous = true;
+
+    function handleResult(event) {
+      let transcript = '';
+      for (let i = 0; i < event.results.length; ++i) {
+        transcript += event.results[i][0].transcript;
+      }
+      outputDiv.textContent = transcript;
+    }
+
+    function startListening() {
+      recognition.start();
+      isListening = true;
+      startButton.disabled = true;
+      stopButton.disabled = false;
+      startButton.style.backgroundColor = "green";
+      stopButton.style.backgroundColor = "red";
+      outputDiv.textContent = 'Listening...';
+      listeningTimeout = setTimeout(stopListening, 30000);
+    }
+
+    function stopListening() {
+      recognition.stop();
+      isListening = false;
+      startButton.disabled = false;
+      stopButton.disabled = true;
+    }
+
+    recognition.addEventListener('result', handleResult);
+    recognition.addEventListener('end', () => {
+      if (isListening) {
+        recognition.start();
+      }
+    });
+    recognition.addEventListener('error', (event) => {
+      console.error('Speech recognition error:', event.error);
+      if (isListening) {
+        recognition.start();
+      }
+    });
+
+    startButton.addEventListener('click', startListening);
+    stopButton.addEventListener('click', stopListening);
+  </script>
+</body>
+
+</html>
