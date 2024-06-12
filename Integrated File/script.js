@@ -58,7 +58,7 @@ async function getGeminiResponse() {
         ];
         const genAI = new GoogleGenerativeAI(API_KEY);
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: "gemini-pro",
             safetySettings: [
                 {
                     category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -74,6 +74,10 @@ async function getGeminiResponse() {
             console.log("generated")
             speakText(response.text());
             output.innerHTML = md.render(buffer.join(''));
+            await sleep(5000);
+            if(isListening == false){
+                startListening();
+            }
         }
     } catch (e) {
         output.innerHTML += '<hr>' + e;
@@ -101,17 +105,26 @@ let listeningTimeout;
 
 recognition.continuous = true;
 
+
+
 function handleResult(event) {
     let transcript = '';
+    output.textContent = '';
+    if(isListening != true){
+        startListening();
+    }
     for (let i = 0; i < event.results.length; ++i) {
         transcript = event.results[i][0].transcript;
         console.log(transcript);
     }
-    outputDiv.textContent += transcript;
-    if (transcript.length === 0) {
-        getGeminiResponse();
+    outputDiv.textContent = transcript;
+    if(isListening == true){
+        stopListening();
     }
+    getGeminiResponse();
 }
+
+
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -122,10 +135,6 @@ async function startListening() {
     stopButton.style.backgroundColor = "rgb(187, 31, 31)";
     startButton.disabled = true;
     stopButton.disabled = false;
-    outputDiv.textContent = 'Calling...';
-    await sleep(2000);
-    outputDiv.textContent = 'Hello there How Can I Help You?';
-    speakText('Hello there How Can I Help You?');
     recognition.start();
     isListening = true;
     listeningTimeout = setTimeout(stopListening, 30000);
@@ -153,5 +162,14 @@ recognition.addEventListener('error', (event) => {
     }
 });
 
-startButton.addEventListener('click', startListening);
+async function intro(){
+    outputDiv.textContent = 'Calling...';
+    await sleep(2000);
+    outputDiv.textContent = '';
+    speakText('Hello there How Can I Help You?');
+    await sleep(2000);
+    startListening();
+}
+
+startButton.addEventListener('click', intro);
 stopButton.addEventListener('click', stopListening);
