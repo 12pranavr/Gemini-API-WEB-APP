@@ -7,6 +7,16 @@ let promptInput = document.querySelector('textarea[name="prompt"]');
 let output = document.querySelector('#output');
 const synth = window.speechSynthesis;
 
+window.addEventListener("beforeunload", function() {
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        if(isListening === true){
+            stopListening();
+        }
+    }
+});
+
+
 function speakText(text) {
     console.log("speak");
     if (window.speechSynthesis) {
@@ -52,7 +62,7 @@ async function getGeminiResponse() {
             {
                 role: 'user',
                 parts: [
-                    { text: promptInput.value }
+                    { text: promptInput.value + ' In Maximum Of 30 Words' }
                 ]
             }
         ];
@@ -74,13 +84,14 @@ async function getGeminiResponse() {
             console.log("generated")
             speakText(response.text());
             output.innerHTML = md.render(buffer.join(''));
-            await sleep(5000);
-            if(isListening == false){
-                startListening();
-            }
         }
+
     } catch (e) {
         output.innerHTML += '<hr>' + e;
+    }
+    await sleep(5000);
+    if(isListening == false){
+        startListening();
     }
 }
 
@@ -101,8 +112,6 @@ const outputDiv = document.getElementById('input');
 
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 let isListening = false;
-let listeningTimeout;
-
 recognition.continuous = true;
 
 
@@ -137,7 +146,6 @@ async function startListening() {
     stopButton.disabled = false;
     recognition.start();
     isListening = true;
-    listeningTimeout = setTimeout(stopListening, 30000);
 }
 
 function stopListening() {
@@ -167,9 +175,42 @@ async function intro(){
     await sleep(2000);
     outputDiv.textContent = '';
     speakText('Hello there How Can I Help You?');
-    await sleep(2000);
+    await sleep(2500);
     startListening();
 }
 
 startButton.addEventListener('click', intro);
 stopButton.addEventListener('click', stopListening);
+
+
+
+
+
+
+
+
+
+
+
+
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDFsQYAlgKnhi7tenivlmOo_86ZZRsF6kU",
+    authDomain: "gemini-api-web-app.firebaseapp.com",
+    projectId: "gemini-api-web-app",
+    storageBucket: "gemini-api-web-app.appspot.com",
+    messagingSenderId: "695894065204",
+    appId: "1:695894065204:web:281cd7c953e3f484358a61",
+    measurementId: "G-HZ63XMGJ94"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
