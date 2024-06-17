@@ -3,14 +3,16 @@ import MarkdownIt from 'markdown-it';
 
 let API_KEY = 'AIzaSyBhc_Pub6pZL4yxciDn9-zNX6r3D0Er9XM';
 let form = document.querySelector('form');
-let promptInput = document.querySelector('textarea[name="prompt"]');
+let promptInput = document.querySelector('textarea[name="Queries"]');
 let output = document.querySelector('#output');
-const synth = window.speechSynthesis;
-const utterance = new SpeechSynthesisUtterance()
-const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 const startButton = document.getElementById('startButton');
 const stopButton = document.getElementById('stopButton');
 let isListening = false;
+let chatHistory = [];
+const synth = window.speechSynthesis;
+const utterance = new SpeechSynthesisUtterance()
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
 
 window.addEventListener("beforeunload", function () {
     if (window.speechSynthesis) {
@@ -23,13 +25,24 @@ window.addEventListener("beforeunload", function () {
 
 async function getGeminiResponse() {
     try {
+        const prompt = document.querySelector('textarea[name="prompt"]').value;
+        chatHistory.push({
+            role: 'user',
+            parts: [
+                { text: promptInput.value + ' Respond in 30 words or less.' }
+            ]
+        });
         let contents = [
             {
-                role: 'user',
+                role: 'model',
                 parts: [
-                    { text: promptInput.value + ' Respond in 30 words or less.' }
+                    { text: prompt }
                 ]
-            }
+            },
+            ...chatHistory.map(entry => ({
+                role: entry.role,
+                parts: entry.parts
+            }))
         ];
         const genAI = new GoogleGenerativeAI(API_KEY);
         const model = genAI.getGenerativeModel({
@@ -53,6 +66,13 @@ async function getGeminiResponse() {
                 output.innerHTML = "Due to privacy concerns, we are unable to disclose further details on this matter. Try Asking Any Other Topics";
             }
         }
+        chatHistory.push({
+            role: 'model',
+            parts: [
+                { text: buffer.join('') }
+            ]
+        });
+
         speakText(output.innerHTML);
     } catch (e) {
         output.innerHTML += '<hr>' + e;
