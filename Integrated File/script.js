@@ -6,24 +6,72 @@ let form = document.querySelector('form');
 let promptInput = document.querySelector('textarea[name="prompt"]');
 let output = document.querySelector('#output');
 const synth = window.speechSynthesis;
+const utterance = new SpeechSynthesisUtterance()
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+const startButton = document.getElementById('startButton');
+const stopButton = document.getElementById('stopButton');
+let isListening = false;
 
-window.addEventListener("beforeunload", function() {
+window.addEventListener("beforeunload", function () {
     if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
-        if(isListening === true){
+        if (isListening === true) {
             stopListening();
         }
     }
 });
 
+async function getGeminiResponse() {
+    try {
+        let contents = [
+            {
+                role: 'user',
+                parts: [
+                    { text: promptInput.value + ' Respond in 30 words or less.' }
+                ]
+            }
+        ];
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-pro",
+            safetySettings: [
+                {
+                    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+            ],
+        });
+        const result = await model.generateContentStream({ contents });
+        let buffer = [];
+        let md = new MarkdownIt();
+        for await (let response of result.stream) {
+            try {
+                let text = response.text();
+                buffer.push(text);
+                output.innerHTML = md.render(buffer.join(''));
+            } catch (err) {
+                output.innerHTML = "Due to privacy concerns, we are unable to disclose further details on this matter. Try Asking Any Other Topics";
+            }
+        }
+        speakText(output.innerHTML);
+    } catch (e) {
+        output.innerHTML += '<hr>' + e;
+    }
+}
+
+form.onsubmit = async (ev) => {
+    ev.preventDefault();
+    synth.cancel();
+    output.textContent = 'Generating...';
+    getGeminiResponse();
+};
 
 function speakText(text) {
-    console.log("speak");
     if (window.speechSynthesis) {
-        // synth.cancel();
-        const utterance = new SpeechSynthesisUtterance()
+        const synth = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance();
         utterance.text = text;
-        utterance.lang = "en-US";
+        utterance.lang = "en-In";
         const selectFemaleVoice = () => {
             const voices = synth.getVoices();
             for (let voice of voices) {
@@ -51,118 +99,70 @@ function speakText(text) {
             utterance.rate = 1.2;
             synth.speak(utterance);
         }
+        utterance.onend = () => {
+            if (!isListening && !(promptInput.innerHTML.trim().split(' ').includes('bye'))) {
+                startListening();
+            }
+        }
     } else {
         alert("Your browser doesn't support Speech Synthesis.");
     }
 }
 
-async function getGeminiResponse() {
-    try {
-        let contents = [
-            {
-                role: 'user',
-                parts: [
-                    { text: promptInput.value + ' In Maximum Of 30 Words' }
-                ]
-            }
-        ];
-        const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({
-            model: "gemini-pro",
-            safetySettings: [
-                {
-                    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-                    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                },
-            ],
-        });
-        const result = await model.generateContentStream({ contents });
-        let buffer = [];
-        let md = new MarkdownIt();
-        for await (let response of result.stream) {
-            buffer.push(response.text());
-            console.log("generated")
-            speakText(response.text());
-            output.innerHTML = md.render(buffer.join(''));
-        }
-
-    } catch (e) {
-        output.innerHTML += '<hr>' + e;
-    }
-    await sleep(5000);
-    if(isListening == false){
-        startListening();
-    }
-}
-
-form.onsubmit = async (ev) => {
-    ev.preventDefault();
-    synth.cancel();
-    output.textContent = 'Generating...';
-    getGeminiResponse();
-};
-
-
-
-
-
-const startButton = document.getElementById('startButton');
-const stopButton = document.getElementById('stopButton');
-const outputDiv = document.getElementById('input');
-
-const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-let isListening = false;
-recognition.continuous = true;
-
-
-
-function handleResult(event) {
+function handleVoiceResult(event) {
     let transcript = '';
     output.textContent = '';
-    if(isListening != true){
-        startListening();
-    }
     for (let i = 0; i < event.results.length; ++i) {
         transcript = event.results[i][0].transcript;
         console.log(transcript);
     }
-    outputDiv.textContent = transcript;
-    if(isListening == true){
+    promptInput.textContent = transcript;
+    if (isListening === true) {
         stopListening();
     }
-    getGeminiResponse();
+    if (promptInput.innerHTML.trim().split(' ').includes('bye')) {
+        endCall();
+    }
+    else {
+        getGeminiResponse();
+    }
 }
 
-
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function startListening() {
-    startButton.style.backgroundColor = "#03ff3e";
-    stopButton.style.backgroundColor = "rgb(187, 31, 31)";
-    startButton.disabled = true;
-    stopButton.disabled = false;
+function startListening() {
+    console.log("start Listening Function")
     recognition.start();
     isListening = true;
 }
 
 function stopListening() {
+    console.log("stop Listening Function");
     recognition.stop();
     isListening = false;
-    startButton.disabled = false;
-    stopButton.disabled = true;
-    startButton.style.backgroundColor = "#28a745";
-    stopButton.style.backgroundColor = "#dc3545";
 }
 
-recognition.addEventListener('result', handleResult);
+recognition.addEventListener('result', handleVoiceResult);
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function intro() {
+    promptInput.textContent = 'Calling...';
+    playAudioForDuration();
+    await sleep(6000);
+    promptInput.textContent = '';
+    speakText('Hello there How Can I Help You?');
+}
+
+startButton.addEventListener('click', intro);
+stopButton.addEventListener('click', stopListening);
+
 recognition.addEventListener('end', () => {
     if (isListening) {
         recognition.start();
     }
 });
+
 recognition.addEventListener('error', (event) => {
     console.error('Speech recognition error:', event.error);
     if (isListening) {
@@ -170,47 +170,14 @@ recognition.addEventListener('error', (event) => {
     }
 });
 
-async function intro(){
-    outputDiv.textContent = 'Calling...';
-    await sleep(2000);
-    outputDiv.textContent = '';
-    speakText('Hello there How Can I Help You?');
-    await sleep(2500);
-    startListening();
+function playAudioForDuration() {
+    var audio = document.getElementById('myAudio');
+    audio.play();
+    setTimeout(function () {
+        audio.pause();
+    }, 5000);
 }
 
-startButton.addEventListener('click', intro);
-stopButton.addEventListener('click', stopListening);
-
-
-
-
-
-
-
-
-
-
-
-
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyDFsQYAlgKnhi7tenivlmOo_86ZZRsF6kU",
-    authDomain: "gemini-api-web-app.firebaseapp.com",
-    projectId: "gemini-api-web-app",
-    storageBucket: "gemini-api-web-app.appspot.com",
-    messagingSenderId: "695894065204",
-    appId: "1:695894065204:web:281cd7c953e3f484358a61",
-    measurementId: "G-HZ63XMGJ94"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+function endCall() {
+    speakText("Thank you for contacting our AI. It was a pleasure speaking with you.");
+}
