@@ -1,13 +1,18 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useContext } from 'react';
+// import { useNavigate } from 'react-router-dom';
+import { UserContext } from '../App';
+
+
+
 
 function Login() {
-    let navigate = useNavigate();
+    const {state,dispatch} = useContext(UserContext);
 
     return (
         <>
-            <div>Logged in</div>
-            <button onClick={() => navigate("/")} className='bg-red-500 text-white p-2 mt-4'>Home</button>
+            <div >Logged in</div>
+
+            <button onClick={dispatch({type:"USER" , payload:true})} className='bg-red-500 text-white p-2 mt-4'>Home</button>
         </>
     );
 }
