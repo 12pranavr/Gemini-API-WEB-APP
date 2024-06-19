@@ -11,7 +11,7 @@ const Navbarfile = () => {
                 <>
                     <li className='flex justify-around items-center gap-5'>
                     <ul>
-                        <Link className='flex justify-around items-center no-underline ht-10 w-20 text-lg font-body text-[#3e5172] hover:text-black hover:rounded-full hover:bg-white hover:p-2' to="/">Home</Link>
+                        <Link className='flex justify-around items-center no-underline ht-10 w-20 text-lg font-body text-[#3e5172] hover:text-black hover:rounded-full hover:bg-white hover:p-2' to="/Home">Home</Link>
                     </ul>
                     <ul>
                         <Link className='flex justify-around items-center no-underline ht-10 w-20 text-lg font-body group-hover:underline text-[#3e5172] hover:text-black hover:rounded-full hover:bg-white hover:p-2' to="/Contact">Contact</Link>
@@ -36,7 +36,7 @@ const Navbarfile = () => {
                 <>
                     <li className='flex justify-around items-center gap-5'>
                     <ul>
-                        <Link className='flex justify-around items-center no-underline ht-10 w-20 text-lg font-body text-[#3e5172] hover:text-black hover:rounded-full hover:bg-white hover:p-2' to="/">Home</Link>
+                        <Link className='flex justify-around items-center no-underline ht-10 w-20 text-lg font-body text-[#3e5172] hover:text-black hover:rounded-full hover:bg-white hover:p-2' to="/home">Home</Link>
                     </ul>
                     <ul>
                         <Link className='flex justify-around items-center no-underline ht-10 w-20 text-lg font-body group-hover:underline text-[#3e5172] hover:text-black hover:rounded-full hover:bg-white hover:p-2' to="/Contact">Contact</Link>
